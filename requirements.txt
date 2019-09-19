@@ -1,0 +1,7 @@
+python-dotenv==0.10.3
+requests==2.22.0
+python-telegram-bot==11.1.0
+redis==3.2.1
+yandex-geocoder==1.0.0
+geopy==1.20.0
+python-slugify==3.0.3
