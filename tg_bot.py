@@ -75,15 +75,12 @@ def send_menu(bot, update, menu_slice=''):
     keyboard.append([InlineKeyboardButton('🛒 Корзина', callback_data='cart')])
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    if update.message:
-        chat_id = update.message.chat_id
-    elif update.callback_query:
-        query = update.callback_query
-        chat_id = update.callback_query.message.chat_id
-        bot.delete_message(chat_id=chat_id,
-                           message_id=query.message.message_id)
+    message = update.message if update.message else update.callback_query.message
+    chat_id = message.chat_id
 
     bot.send_message(chat_id=chat_id, text='Меню:', reply_markup=reply_markup)
+    bot.delete_message(chat_id=chat_id, message_id=message.message_id)
+
 
     return 'HANDLE_MENU'
 
