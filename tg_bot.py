@@ -1,8 +1,9 @@
 from ast import literal_eval as make_tuple
 import os
 import logging
-import redis
+from textwrap import dedent
 
+import redis
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, LabeledPrice
 from telegram.ext import Filters, Updater
@@ -17,7 +18,7 @@ load_dotenv()
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_PAYMENT_TOKEN = os.getenv('TELEGRAM_PAYMENT_TOKEN')
 TELEGRAM_PAYMENT_PARAMETER = os.getenv('TELEGRAM_PAYMENT_PARAMETER')
-TELEGRAM_PROXY = os.getenv('TG_PROXY')
+TELEGRAM_PROXY = os.getenv('TELEGRAM_PROXY')
 
 REDIS_HOST = os.getenv('REDIS_HOST')
 REDIS_PORT = os.getenv('REDIS_PORT')
@@ -218,28 +219,32 @@ def send_delivery_options(bot, update, user_location):
             break
 
     if delivery_price is None:
-        text = f'''Простите, но так далеко мы пицу не повезем. Ближайшая пицерия в {round(distance)} км. от вас.
-
-Самостоятельно пиццу можно забрать из пиццерии по адресу {pizzeria_address}'''
+        text = f'''\
+        Простите, но так далеко мы пицу не повезем. Ближайшая пицерия в {round(distance)} км. от вас.
+        Самостоятельно пиццу можно забрать из пиццерии по адресу {pizzeria_address}
+        '''
 
     elif delivery_price == 0:
-        text = f'''Может, заберете пиццу из нашей пицерии неподалеку? Она всего в {int(distance * 1000)} метрах от вас!
-Вот ее адрес {pizzeria_address}
+        text = f'''\
+        Может, заберете пиццу из нашей пицерии неподалеку? Она всего в {int(distance * 1000)} метрах от вас!
+        Вот ее адрес {pizzeria_address}
 
-А можем и бесплатно доставить, нам не сложно c:'''
+        А можем и бесплатно доставить, нам не сложно c:
+        '''
         keyboard.insert(0, [InlineKeyboardButton('Бесплатная доставка', callback_data=f'delivery_0_{user_location}')])
 
     elif delivery_price > 0:
-        text = f'''Похоже, придется ехать до вас на самокате. Доставка будет стоить {delivery_price} руб.
+        text = f'''\
+        Похоже, придется ехать до вас на самокате. Доставка будет стоить {delivery_price} руб.
 
-Самостоятельно пиццу можно забрать из пиццерии по адресу {pizzeria_address}
+        Самостоятельно пиццу можно забрать из пиццерии по адресу {pizzeria_address}
 
-Доставляем или самовывоз?'''
+        Доставляем или самовывоз?'''
         keyboard.insert(0, [InlineKeyboardButton(f'Доставка за {delivery_price} руб.',
                                                  callback_data=f'delivery_{delivery_price}_{user_location}')])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
-    bot.send_message(chat_id=chat_id, text=text, reply_markup=reply_markup)
+    bot.send_message(chat_id=chat_id, text=dedent(text), reply_markup=reply_markup)
 
     return 'HANDLE_DELIVERY_OPTIONS'
 
@@ -388,7 +393,6 @@ def handle_users_reply(bot, update):
 
 
 def start_bot():
-    logger.info(f'TG bot started')
     updater = Updater(TELEGRAM_TOKEN, request_kwargs=REQUEST_KWARGS)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(CallbackQueryHandler(handle_users_reply))
@@ -398,6 +402,7 @@ def start_bot():
     dispatcher.add_handler(PreCheckoutQueryHandler(process_precheckout))
     dispatcher.add_handler(MessageHandler(Filters.successful_payment, process_successful_payment, pass_job_queue=True))
     updater.start_polling()
+    logger.info(f'TG bot started')
 
 
 if __name__ == '__main__':
