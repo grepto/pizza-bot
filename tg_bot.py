@@ -81,7 +81,6 @@ def send_menu(bot, update, menu_slice=''):
     bot.send_message(chat_id=chat_id, text='Меню:', reply_markup=reply_markup)
     bot.delete_message(chat_id=chat_id, message_id=message.message_id)
 
-
     return 'HANDLE_MENU'
 
 
@@ -115,15 +114,13 @@ def send_product_detail(bot, update):
                 [InlineKeyboardButton('Назад', callback_data='menu')]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    bot.delete_message(chat_id=query.message.chat_id,
-                       message_id=query.message.message_id)
-
     bot.send_photo(
         chat_id=query.message.chat_id,
         photo=product_image_url,
         caption=message,
         reply_markup=reply_markup)
 
+    bot.delete_message(chat_id=query.message.chat_id, message_id=query.message.message_id)
     return 'HANDLE_PRODUCT_DETAIL'
 
 
