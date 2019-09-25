@@ -1,2 +1,2 @@
 pizza-bot: python3 main.py
-web: gunicorn app:fb_webhook --log-file=-
+web: gunicorn fb_webhook:app --log-file=-
