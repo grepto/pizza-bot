@@ -5,3 +5,5 @@ redis==3.2.1
 yandex-geocoder==1.0.0
 geopy==1.20.0
 python-slugify==3.0.3
+Flask==0.12
+gunicorn==19.6.0
