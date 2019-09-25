@@ -2,9 +2,12 @@ import os
 
 import requests
 from flask import Flask, request
+from dotenv import load_dotenv
 
+load_dotenv()
 app = Flask(__name__)
-FACEBOOK_TOKEN = os.environ["FACEBOOK_APP_KEY"]
+FACEBOOK_TOKEN = os.getenv("FACEBOOK_APP_KEY")
+
 
 @app.route('/', methods=['GET'])
 def verify():
@@ -12,7 +15,7 @@ def verify():
     При верификации вебхука у Facebook он отправит запрос на этот адрес. На него нужно ответить VERIFY_TOKEN.
     """
     if request.args.get("hub.mode") == "subscribe" and request.args.get("hub.challenge"):
-        if not request.args.get("hub.verify_token") == os.environ["FACEBOOK_VERIFY_TOKEN"]:
+        if not request.args.get("hub.verify_token") == os.getenv("FACEBOOK_VERIFY_TOKEN"):
             return "Verification token mismatch", 403
         return request.args["hub.challenge"], 200
 
