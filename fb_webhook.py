@@ -30,12 +30,17 @@ def webhook():
     data = request.get_json()
     if data["object"] == "page":
         for entry in data["entry"]:
-            for messaging_event in entry["messaging"]:
-                if messaging_event.get("message"):
-                    sender_id = messaging_event["sender"]["id"]
-                    recipient_id = messaging_event["recipient"]["id"]
-                    message_text = messaging_event["message"]["text"]
-                    send_message(sender_id, message_text)
+            if entry.get("messaging"):
+                for messaging_event in entry["messaging"]:
+                    if messaging_event.get("message"):
+                        sender_id = messaging_event["sender"]["id"]
+                        recipient_id = messaging_event["recipient"]["id"]
+                        message_text = messaging_event["message"]["text"]
+                        try:
+                            send_message(sender_id, message_text)
+                            send_menu(sender_id)
+                        except:
+                            print('error')
     return "ok", 200
 
 
