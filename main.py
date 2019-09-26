@@ -30,6 +30,10 @@ log_config = {
                 'handlers': ['console'],
                 'level': LOG_LEVEL,
             },
+            'database': {
+                'handlers': ['console'],
+                'level': LOG_LEVEL,
+            },
             'JobQueue': {
                 'handlers': ['console'],
                 'level': LOG_LEVEL,
