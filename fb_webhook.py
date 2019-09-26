@@ -4,6 +4,8 @@ import requests
 from flask import Flask, request
 from dotenv import load_dotenv
 
+from moltin import get_products, get_product_image_url
+
 load_dotenv()
 app = Flask(__name__)
 FACEBOOK_TOKEN = os.getenv("FACEBOOK_APP_KEY")
@@ -62,7 +64,7 @@ def send_message(recipient_id, message_text):
     response.raise_for_status()
 
 
-def send_menu(recipient_id):
+def _send_test(recipient_id):
     params = {"access_token": FACEBOOK_TOKEN}
     headers = {"Content-Type": "application/json"}
     request_content = {
@@ -90,6 +92,46 @@ def send_menu(recipient_id):
         "https://graph.facebook.com/v2.6/me/messages",
         params=params, headers=headers, json=request_content
     )
+    response.raise_for_status()
+
+
+def send_menu(recipient_id):
+    menu = [{
+        "title": f"{product['name']} - {product['meta']['display_price']['with_tax']['formatted']}",
+        "image_url": get_product_image_url(product['relationships']['main_image']['data']['id']),
+        "subtitle": product["description"],
+        "buttons": [
+            {
+                "type": "postback",
+                "title": "Добавить в корзину",
+                "payload": f"add_to_card_{product['id']}"
+            }
+        ]
+    }
+        for product in get_products()[0:5]]
+    print(*menu, sep='\n\n')
+    params = {"access_token": FACEBOOK_TOKEN}
+    headers = {"Content-Type": "application/json"}
+    request_content = {
+        "recipient": {
+            "id": recipient_id
+        },
+        "message": {
+            "attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "generic",
+                    "image_aspect_ratio": "square",
+                    "elements": menu
+                }
+            }
+        }
+    }
+    response = requests.post(
+        "https://graph.facebook.com/v2.6/me/messages",
+        params=params, headers=headers, json=request_content
+    )
+    print(response.content)
     response.raise_for_status()
 
 
