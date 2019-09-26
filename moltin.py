@@ -224,14 +224,17 @@ def get_flow_entry(flow_slug, entry_id):
     return response.json()['data']
 
 
-def get_products():
+def get_products(category_id=None):
     headers = {
         'Authorization': get_token(),
     }
+    params = {}
+    if category_id:
+        params['filter'] = f'eq(category.id,{category_id})'
 
     url = f'{MOLTIN_ENDPOINT}/{MOLTIN_API_VERSION}/products'
 
-    response = requests.get(url, headers=headers)
+    response = requests.get(url, headers=headers, params=params)
 
     response.raise_for_status()
 
@@ -415,6 +418,20 @@ def add_customer(name, email):
         customer_id = get_customer(email=email)[0]['id']
 
     return customer_id
+
+
+def get_categories():
+    headers = {
+        'Authorization': get_token(),
+    }
+
+    url = f'{MOLTIN_ENDPOINT}/{MOLTIN_API_VERSION}/categories'
+
+    response = requests.get(url, headers=headers)
+
+    response.raise_for_status()
+
+    return response.json()['data']
 
 
 def main():
