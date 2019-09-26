@@ -155,7 +155,7 @@ def send_menu(user_id, category_id=COMMON_CATEGORY_ID):
             {
                 'type': 'postback',
                 'title': 'Добавить в корзину',
-                'payload': f'add_to_card-{product["id"]}'
+                'payload': f'add_to_card~{product["id"]}'
             }
         ]
     }
@@ -169,7 +169,7 @@ def send_menu(user_id, category_id=COMMON_CATEGORY_ID):
             {
                 'type': 'postback',
                 'title': category['name'],
-                'payload': f'change_category_{category["id"]}'
+                'payload': 'change_category~' + category['id']
             }
             for category in get_categories() if category['id'] != category_id]
     }
@@ -205,8 +205,12 @@ def send_menu(user_id, category_id=COMMON_CATEGORY_ID):
 def handle_menu(user_id, message):
     print(f'handle_menu({user_id}, {message})')
     if message.startswith('add_to_card'):
-        _, product_id = message.split('-')
+        _, product_id = message.split('~')
         add_cart_item(USER_DATABASE_PREFIX + user_id, product_id)
+    if message.startswith('change_category'):
+        _, category_id = message.split('~')
+        return send_menu(user_id, category_id=category_id)
+
     return 'HANDLE_MENU'
 
 
