@@ -18,9 +18,6 @@ USER_DATABASE_PREFIX = 'facebook_'
 
 @app.route('/', methods=['GET'])
 def verify():
-    '''
-    При верификации вебхука у Facebook он отправит запрос на этот адрес. На него нужно ответить VERIFY_TOKEN.
-    '''
     if request.args.get('hub.mode') == 'subscribe' and request.args.get('hub.challenge'):
         if not request.args.get('hub.verify_token') == os.getenv('FACEBOOK_VERIFY_TOKEN'):
             return 'Verification token mismatch', 403
@@ -31,9 +28,6 @@ def verify():
 
 @app.route('/', methods=['POST'])
 def webhook():
-    '''
-    Основной вебхук, на который будут приходить сообщения от Facebook.
-    '''
     data = request.get_json()
     print(data)
     if data['object'] == 'page':
