@@ -10,6 +10,7 @@ from database import get_user_state, set_user_state
 load_dotenv()
 
 app = Flask(__name__)
+
 FACEBOOK_TOKEN = os.getenv('FACEBOOK_APP_KEY')
 COMMON_CATEGORY_ID = '4531e739-3554-4042-9dfe-1972a860e6fe'
 USER_DATABASE_PREFIX = 'facebook_'
@@ -39,27 +40,56 @@ def webhook():
         for entry in data['entry']:
             if entry.get('messaging'):
                 for messaging_event in entry['messaging']:
+                    user_id = messaging_event['sender']['id']
+                    recipient_id = messaging_event['recipient']['id']
                     if messaging_event.get('message'):
-                        sender_id = messaging_event['sender']['id']
-                        recipient_id = messaging_event['recipient']['id']
-                        message_text = messaging_event['message']['text']
-                        try:
-                            send_message(sender_id, message_text)
-                            send_menu(sender_id)
-                        except:
-                            print('error')
+                        message = messaging_event['message']['text']
+                    elif messaging_event.get('postback'):
+                        message = messaging_event['postback']['payload']
+                    else:
+                        message = None
+                    print('webhook')
+                    print(message)
+                    try:
+                        handle_users_reply(user_id, message)
+                    except:
+                        print('error')
     return 'ok', 200
 
 
-def send_message(recipient_id, message_text):
+def handle_start(user_id, message):
+    return send_menu(user_id)
+
+
+def handle_users_reply(user_id, message):
+    print(f'handle_users_reply({user_id}, {message})')
+    states_functions = {
+        'START': handle_start,
+        'HANDLE_MENU': handle_menu,
+    }
+    user_state = get_user_state(USER_DATABASE_PREFIX+user_id)
+    print('user_state get_user_state', user_state)
+    if not user_state or user_state not in states_functions.keys():
+        user_state = 'START'
+    if message == '/start':
+        user_state = 'START'
+    print('user_state if if if', user_state)
+    state_handler = states_functions[user_state]
+    print('state_handler', state_handler)
+    next_state = state_handler(user_id, message)
+    set_user_state(USER_DATABASE_PREFIX + user_id, next_state)
+    print('next_state', next_state)
+
+
+def send_message(user_id, message):
     params = {'access_token': FACEBOOK_TOKEN}
     headers = {'Content-Type': 'application/json'}
     request_content = {
         'recipient': {
-            'id': recipient_id
+            'id': user_id
         },
         'message': {
-            'text': message_text
+            'text': message
         }
     }
     response = requests.post(
@@ -69,12 +99,12 @@ def send_message(recipient_id, message_text):
     response.raise_for_status()
 
 
-def _send_test(recipient_id):
+def _send_test(user_id):
     params = {'access_token': FACEBOOK_TOKEN}
     headers = {'Content-Type': 'application/json'}
     request_content = {
         'recipient': {
-            'id': recipient_id
+            'id': user_id
         },
         'message': {
             'attachment': {
@@ -100,7 +130,7 @@ def _send_test(recipient_id):
     response.raise_for_status()
 
 
-def send_menu(recipient_id, category_id=COMMON_CATEGORY_ID):
+def send_menu(user_id, category_id=COMMON_CATEGORY_ID):
     menu_action_card = {
         'title': 'Меню',
         'image_url': 'https://seeklogo.com/images/P/pizza-logo-9092058631-seeklogo.com.png',
@@ -131,7 +161,7 @@ def send_menu(recipient_id, category_id=COMMON_CATEGORY_ID):
             {
                 'type': 'postback',
                 'title': 'Добавить в корзину',
-                'payload': f'add_to_card_{product["id"]}'
+                'payload': f'add_to_card-{product["id"]}'
             }
         ]
     }
@@ -152,12 +182,11 @@ def send_menu(recipient_id, category_id=COMMON_CATEGORY_ID):
 
     menu.insert(0, menu_action_card)
     menu.append(menu_other_category)
-    print(*menu, sep='\n\n')
     params = {'access_token': FACEBOOK_TOKEN}
     headers = {'Content-Type': 'application/json'}
     request_content = {
         'recipient': {
-            'id': recipient_id
+            'id': user_id
         },
         'message': {
             'attachment': {
@@ -174,8 +203,17 @@ def send_menu(recipient_id, category_id=COMMON_CATEGORY_ID):
         'https://graph.facebook.com/v2.6/me/messages',
         params=params, headers=headers, json=request_content
     )
-    print(response.content)
     response.raise_for_status()
+
+    return 'HANDLE_MENU'
+
+
+def handle_menu(user_id, message):
+    print(f'handle_menu({user_id}, {message})')
+    if message.startswith('add_to_card'):
+        _, product_id = message.split('-')
+        add_cart_item(USER_DATABASE_PREFIX + user_id, product_id)
+    return 'HANDLE_MENU'
 
 
 if __name__ == '__main__':
