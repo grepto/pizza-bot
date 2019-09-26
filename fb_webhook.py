@@ -4,7 +4,8 @@ import requests
 from flask import Flask, request
 from dotenv import load_dotenv
 
-from moltin import get_products, get_product_image_url, get_categories, add_cart_item, get_cart, get_product
+from moltin import get_products, get_product_image_url, get_categories, add_cart_item, get_cart, get_product, \
+    remove_cart_item
 from database import get_user_state, set_user_state
 
 load_dotenv()
@@ -119,14 +120,14 @@ def send_cart(user_id):
         ]
     }
     cart_items = [{
-        'title': product['name'],
+        'title': f'{product["name"]} {product["quantity"]} шт.',
         'image_url': product['image_url'],
         'subtitle': product['description'],
         'buttons': [
             {
                 'type': 'postback',
                 'title': 'Добавить в еще одну',
-                'payload': f'add_to_cart~{product["id"]}'
+                'payload': f'add_to_cart~{product["product_id"]}'
             },
             {
                 'type': 'postback',
@@ -166,6 +167,17 @@ def send_cart(user_id):
 
 def handle_cart(user_id, message):
     print(f'handle_cart({user_id},{message})')
+    if message.startswith('add_to_cart'):
+        _, product_id = message.split('~')
+        add_to_cart(user_id, product_id)
+        return send_cart(user_id)
+    elif message.startswith('remove_from_cart'):
+        _, cart_item_id = message.split('~')
+        remove_from_cart(user_id, cart_item_id)
+        return send_cart(user_id)
+    elif message == 'menu':
+        return send_menu(user_id)
+
     return 'HANDLE_CART'
 
 
@@ -294,9 +306,17 @@ def handle_menu(user_id, message):
 
 
 def add_to_cart(user_id, product_id):
-    add_cart_item(USER_DATABASE_PREFIX + user_id, product_id)
+    print(f'add_to_cart({user_id},{product_id})')
+    add_cart_item(USER_DATABASE_PREFIX + str(user_id), product_id)
     product_name = get_product(product_id)['name']
     message_text = f'Пицца {product_name} добавлена в корзину'
+    send_message(user_id, message_text)
+
+
+def remove_from_cart(user_id, cart_item_id):
+    print(f'remove_from_cart({user_id},{cart_item_id})')
+    remove_cart_item(USER_DATABASE_PREFIX + str(user_id), cart_item_id)
+    message_text = f'Пицца удалена из корзины'
     send_message(user_id, message_text)
 
 
