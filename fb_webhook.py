@@ -96,6 +96,28 @@ def _send_test(recipient_id):
 
 
 def send_menu(recipient_id):
+    menu_first_element = {
+        'title': 'Меню',
+        'image_url': 'https://seeklogo.com/images/P/pizza-logo-9092058631-seeklogo.com.png',
+        'subtitle': 'Здесь вы можете выбрать один из вариантов',
+        'buttons': [
+            {
+                "type": "postback",
+                "title": "Корзина",
+                "payload": "show_card"
+            },
+            {
+                "type": "postback",
+                "title": "Акции",
+                "payload": "offers"
+            },
+            {
+                "type": "postback",
+                "title": "Оформить заказ",
+                "payload": "checkout"
+            },
+        ]
+    }
     menu = [{
         "title": f"{product['name']} - {product['meta']['display_price']['with_tax']['formatted']}",
         "image_url": get_product_image_url(product['relationships']['main_image']['data']['id']),
@@ -109,6 +131,7 @@ def send_menu(recipient_id):
         ]
     }
         for product in get_products()[0:5]]
+    menu.insert(0, menu_first_element)
     print(*menu, sep='\n\n')
     params = {"access_token": FACEBOOK_TOKEN}
     headers = {"Content-Type": "application/json"}
