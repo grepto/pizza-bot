@@ -4,7 +4,7 @@ import requests
 from flask import Flask, request
 from dotenv import load_dotenv
 
-from moltin import get_products, get_product_image_url, get_categories, add_cart_item
+from moltin import get_products, get_product_image_url, get_categories, add_cart_item, get_cart, get_product
 from database import get_user_state, set_user_state
 
 load_dotenv()
@@ -60,8 +60,9 @@ def handle_users_reply(user_id, message):
     states_functions = {
         'START': handle_start,
         'HANDLE_MENU': handle_menu,
+        'HANDLE_CART': handle_cart,
     }
-    user_state = get_user_state(USER_DATABASE_PREFIX+user_id)
+    user_state = get_user_state(USER_DATABASE_PREFIX + user_id)
     print('user_state get_user_state', user_state)
     if not user_state or user_state not in states_functions.keys():
         user_state = 'START'
@@ -91,6 +92,81 @@ def send_message(user_id, message):
         params=params, headers=headers, json=request_content
     )
     response.raise_for_status()
+
+
+def send_cart(user_id):
+    print(f'send_cart({user_id})')
+    cart = get_cart(USER_DATABASE_PREFIX + str(user_id))
+    cart_action_item = {
+        'title': f'Ваш заказ на сумму {cart["total_price_formatted"]}',
+        'image_url': 'https://internet-marketings.ru/wp-content/uploads/2018/08/idealnaya-korzina-internet-magazina-1068x713.jpg',
+        'buttons': [
+            {
+                'type': 'postback',
+                'title': 'К меню',
+                'payload': 'menu'
+            },
+            {
+                'type': 'postback',
+                'title': 'Самовывоз',
+                'payload': 'pickup'
+            },
+            {
+                'type': 'postback',
+                'title': 'Доставка',
+                'payload': 'delivery'
+            },
+        ]
+    }
+    cart_items = [{
+        'title': product['name'],
+        'image_url': product['image_url'],
+        'subtitle': product['description'],
+        'buttons': [
+            {
+                'type': 'postback',
+                'title': 'Добавить в еще одну',
+                'payload': f'add_to_cart~{product["id"]}'
+            },
+            {
+                'type': 'postback',
+                'title': 'Убрать из корзины',
+                'payload': f'remove_from_cart~{product["id"]}'
+            },
+        ]
+    } for product in cart['products']]
+    cart_items.insert(0, cart_action_item)
+
+    params = {'access_token': FACEBOOK_TOKEN}
+    headers = {'Content-Type': 'application/json'}
+    request_content = {
+        'recipient': {
+            'id': user_id
+        },
+        'message': {
+            'attachment': {
+                'type': 'template',
+                'payload': {
+                    'template_type': 'generic',
+                    'image_aspect_ratio': 'square',
+                    'elements': cart_items
+                }
+            }
+        }
+    }
+    response = requests.post(
+        'https://graph.facebook.com/v2.6/me/messages',
+        params=params, headers=headers, json=request_content
+    )
+    print(response.content)
+    response.raise_for_status()
+
+    return 'HANDLE_CART'
+
+
+def handle_cart(user_id, message):
+    print(f'handle_cart({user_id},{message})')
+    return 'HANDLE_CART'
 
 
 def _send_test(user_id):
@@ -125,7 +201,7 @@ def _send_test(user_id):
 
 
 def send_menu(user_id, category_id=COMMON_CATEGORY_ID):
-    menu_action_card = {
+    menu_action_item = {
         'title': 'Меню',
         'image_url': 'https://seeklogo.com/images/P/pizza-logo-9092058631-seeklogo.com.png',
         'subtitle': 'Здесь вы можете выбрать один из вариантов',
@@ -133,7 +209,7 @@ def send_menu(user_id, category_id=COMMON_CATEGORY_ID):
             {
                 'type': 'postback',
                 'title': 'Корзина',
-                'payload': 'show_card'
+                'payload': 'show_cart'
             },
             {
                 'type': 'postback',
@@ -155,7 +231,7 @@ def send_menu(user_id, category_id=COMMON_CATEGORY_ID):
             {
                 'type': 'postback',
                 'title': 'Добавить в корзину',
-                'payload': f'add_to_card~{product["id"]}'
+                'payload': f'add_to_cart~{product["id"]}'
             }
         ]
     }
@@ -174,7 +250,7 @@ def send_menu(user_id, category_id=COMMON_CATEGORY_ID):
             for category in get_categories() if category['id'] != category_id]
     }
 
-    menu.insert(0, menu_action_card)
+    menu.insert(0, menu_action_item)
     menu.append(menu_other_category)
     params = {'access_token': FACEBOOK_TOKEN}
     headers = {'Content-Type': 'application/json'}
@@ -204,12 +280,18 @@ def send_menu(user_id, category_id=COMMON_CATEGORY_ID):
 
 def handle_menu(user_id, message):
     print(f'handle_menu({user_id}, {message})')
-    if message.startswith('add_to_card'):
+    if message.startswith('add_to_cart'):
         _, product_id = message.split('~')
         add_cart_item(USER_DATABASE_PREFIX + user_id, product_id)
-    if message.startswith('change_category'):
+        product_name = get_product(product_id)['name']
+        message_text = f'Пицца {product_name} добавлена в корзину'
+        send_message(user_id, message_text)
+        return 'HANDLE_MENU'
+    elif message.startswith('change_category'):
         _, category_id = message.split('~')
         return send_menu(user_id, category_id=category_id)
+    elif message == 'show_cart':
+        return send_cart(user_id)
 
     return 'HANDLE_MENU'
 
