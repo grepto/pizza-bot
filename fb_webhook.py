@@ -4,13 +4,15 @@ import requests
 from flask import Flask, request
 from dotenv import load_dotenv
 
-from moltin import get_products, get_product_image_url, get_categories
+from moltin import get_products, get_product_image_url, get_categories, add_cart_item
+from database import get_user_state, set_user_state
 
 load_dotenv()
 
 app = Flask(__name__)
 FACEBOOK_TOKEN = os.getenv('FACEBOOK_APP_KEY')
 COMMON_CATEGORY_ID = '4531e739-3554-4042-9dfe-1972a860e6fe'
+USER_DATABASE_PREFIX = 'facebook_'
 
 
 @app.route('/', methods=['GET'])
