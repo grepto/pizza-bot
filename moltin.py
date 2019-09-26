@@ -341,6 +341,7 @@ def get_cart(customer_id):
             'unit_price': product['unit_price']['amount'],
             'unit_price_formatted': product['meta']['display_price']['with_tax']['unit']['formatted'],
             'total_price_formatted': product['meta']['display_price']['with_tax']['value']['formatted'],
+            'image_url': product['image']['href']
         }
         products.append(product_info)
     total_price_formatted = response.json()['meta']['display_price']['with_tax']['formatted']
