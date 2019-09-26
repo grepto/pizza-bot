@@ -282,10 +282,7 @@ def handle_menu(user_id, message):
     print(f'handle_menu({user_id}, {message})')
     if message.startswith('add_to_cart'):
         _, product_id = message.split('~')
-        add_cart_item(USER_DATABASE_PREFIX + user_id, product_id)
-        product_name = get_product(product_id)['name']
-        message_text = f'Пицца {product_name} добавлена в корзину'
-        send_message(user_id, message_text)
+        add_to_cart(user_id, product_id)
         return 'HANDLE_MENU'
     elif message.startswith('change_category'):
         _, category_id = message.split('~')
@@ -294,6 +291,13 @@ def handle_menu(user_id, message):
         return send_cart(user_id)
 
     return 'HANDLE_MENU'
+
+
+def add_to_cart(user_id, product_id):
+    add_cart_item(USER_DATABASE_PREFIX + user_id, product_id)
+    product_name = get_product(product_id)['name']
+    message_text = f'Пицца {product_name} добавлена в корзину'
+    send_message(user_id, message_text)
 
 
 if __name__ == '__main__':
