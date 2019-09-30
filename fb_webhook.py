@@ -30,25 +30,19 @@ def verify():
 @app.route('/', methods=['POST'])
 def webhook():
     data = request.get_json()
-    print(data)
     if data['object'] == 'page':
         for entry in data['entry']:
             if entry.get('messaging'):
                 for messaging_event in entry['messaging']:
                     user_id = messaging_event['sender']['id']
-                    recipient_id = messaging_event['recipient']['id']
                     if messaging_event.get('message'):
                         message = messaging_event['message']['text']
                     elif messaging_event.get('postback'):
                         message = messaging_event['postback']['payload']
                     else:
                         message = None
-                    print('webhook')
-                    print(message)
-                    try:
-                        handle_users_reply(user_id, message)
-                    except:
-                        print('error')
+
+                    handle_users_reply(user_id, message)
     return 'ok', 200
 
 
@@ -57,24 +51,19 @@ def handle_start(user_id, message):
 
 
 def handle_users_reply(user_id, message):
-    print(f'handle_users_reply({user_id}, {message})')
     states_functions = {
         'START': handle_start,
         'HANDLE_MENU': handle_menu,
         'HANDLE_CART': handle_cart,
     }
     user_state = get_user_state(USER_DATABASE_PREFIX + user_id)
-    print('user_state get_user_state', user_state)
     if not user_state or user_state not in states_functions.keys():
         user_state = 'START'
     if message == '/start':
         user_state = 'START'
-    print('user_state if if if', user_state)
     state_handler = states_functions[user_state]
-    print('state_handler', state_handler)
     next_state = state_handler(user_id, message)
     set_user_state(USER_DATABASE_PREFIX + user_id, next_state)
-    print('next_state', next_state)
 
 
 def send_message(user_id, message):
@@ -96,7 +85,6 @@ def send_message(user_id, message):
 
 
 def send_cart(user_id):
-    print(f'send_cart({user_id})')
     cart = get_cart(USER_DATABASE_PREFIX + str(user_id))
     cart_action_item = {
         'title': f'Ваш заказ на сумму {cart["total_price_formatted"]}',
@@ -159,14 +147,12 @@ def send_cart(user_id):
         'https://graph.facebook.com/v2.6/me/messages',
         params=params, headers=headers, json=request_content
     )
-    print(response.content)
     response.raise_for_status()
 
     return 'HANDLE_CART'
 
 
 def handle_cart(user_id, message):
-    print(f'handle_cart({user_id},{message})')
     if message.startswith('add_to_cart'):
         _, product_id = message.split('~')
         add_to_cart(user_id, product_id)
@@ -179,37 +165,6 @@ def handle_cart(user_id, message):
         return send_menu(user_id)
 
     return 'HANDLE_CART'
-
-
-def _send_test(user_id):
-    params = {'access_token': FACEBOOK_TOKEN}
-    headers = {'Content-Type': 'application/json'}
-    request_content = {
-        'recipient': {
-            'id': user_id
-        },
-        'message': {
-            'attachment': {
-                'type': 'template',
-                'payload': {
-                    'template_type': 'button',
-                    'text': 'Try the postback button!',
-                    'buttons': [
-                        {
-                            'type': 'postback',
-                            'title': 'Postback Button',
-                            'payload': 'DEVELOPER_DEFINED_PAYLOAD'
-                        }
-                    ]
-                }
-            }
-        }
-    }
-    response = requests.post(
-        'https://graph.facebook.com/v2.6/me/messages',
-        params=params, headers=headers, json=request_content
-    )
-    response.raise_for_status()
 
 
 def send_menu(user_id, category_id=COMMON_CATEGORY_ID):
@@ -291,7 +246,6 @@ def send_menu(user_id, category_id=COMMON_CATEGORY_ID):
 
 
 def handle_menu(user_id, message):
-    print(f'handle_menu({user_id}, {message})')
     if message.startswith('add_to_cart'):
         _, product_id = message.split('~')
         add_to_cart(user_id, product_id)
@@ -306,7 +260,6 @@ def handle_menu(user_id, message):
 
 
 def add_to_cart(user_id, product_id):
-    print(f'add_to_cart({user_id},{product_id})')
     add_cart_item(USER_DATABASE_PREFIX + str(user_id), product_id)
     product_name = get_product(product_id)['name']
     message_text = f'Пицца {product_name} добавлена в корзину'
@@ -314,7 +267,6 @@ def add_to_cart(user_id, product_id):
 
 
 def remove_from_cart(user_id, cart_item_id):
-    print(f'remove_from_cart({user_id},{cart_item_id})')
     remove_cart_item(USER_DATABASE_PREFIX + str(user_id), cart_item_id)
     message_text = f'Пицца удалена из корзины'
     send_message(user_id, message_text)
