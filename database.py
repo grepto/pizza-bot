@@ -1,4 +1,5 @@
 import os
+import json
 import logging
 
 import redis
@@ -36,9 +37,19 @@ def set_user_state(user_id, state):
     db.set(user_id, state)
 
 
+def load_menu_to_db(menu):
+    db = get_database_connection()
+    db.set('menu', json.dumps(menu))
+
+
+def get_menu_from_db():
+    db = get_database_connection()
+    menu = db.get('menu')
+    return json.loads(menu)
+
+
 def main():
-    set_user_state('asdfasdfads', 'odin')
-    print(get_user_state('asdfasdfads1'))
+    pass
 
 
 if __name__ == '__main__':

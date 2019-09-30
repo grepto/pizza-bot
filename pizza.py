@@ -8,7 +8,8 @@ import yandex_geocoder
 from geopy.distance import lonlat, distance
 
 from moltin import load_image, add_product, link_product_image, add_flow_entry, get_flow_entries, get_flow_entry, \
-    get_cart, add_cart_custom_item
+    get_cart, add_cart_custom_item, get_products, get_product_image_url
+from database import get_menu_from_db, load_menu_to_db
 
 MENU_FILE = 'menu.json'
 ADDRESSES_FILE = 'addresses.json'
@@ -124,6 +125,25 @@ def get_cart_items_text(cart):
         cart_items_text = '\n\n'.join(text_rows)
 
     return cart_items_text
+
+
+def cashe_menu():
+    menu = get_products()
+    for menu_item in menu:
+        menu_item['main_image_url'] = get_product_image_url(menu_item['relationships']['main_image']['data']['id'])
+    return load_menu_to_db(menu)
+
+
+def get_menu(category_id=None):
+    if not category_id:
+        menu = get_menu_from_db()
+    else:
+        menu = []
+        for menu_item in get_menu_from_db():
+            if [category for category in menu_item['relationships']['categories']['data'] if
+                category['id'] == category_id]:
+                menu.append(menu_item)
+    return menu
 
 
 def main():

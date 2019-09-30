@@ -4,9 +4,9 @@ import requests
 from flask import Flask, request
 from dotenv import load_dotenv
 
-from moltin import get_products, get_product_image_url, get_categories, add_cart_item, get_cart, get_product, \
-    remove_cart_item
+from moltin import get_categories, add_cart_item, get_cart, get_product, remove_cart_item
 from database import get_user_state, set_user_state
+from pizza import get_menu
 
 load_dotenv()
 
@@ -236,18 +236,18 @@ def send_menu(user_id, category_id=COMMON_CATEGORY_ID):
         ]
     }
     menu = [{
-        'title': f'{product["name"]} - {product["meta"]["display_price"]["with_tax"]["formatted"]}',
-        'image_url': get_product_image_url(product['relationships']['main_image']['data']['id']),
-        'subtitle': product['description'],
+        'title': f'{menu_item["name"]} - {menu_item["meta"]["display_price"]["with_tax"]["formatted"]}',
+        'image_url': menu_item['main_image_url'],
+        'subtitle': menu_item['description'],
         'buttons': [
             {
                 'type': 'postback',
                 'title': 'Добавить в корзину',
-                'payload': f'add_to_cart~{product["id"]}'
+                'payload': f'add_to_cart~{menu_item["id"]}'
             }
         ]
     }
-        for product in get_products(category_id=category_id)]
+        for menu_item in get_menu(category_id=category_id)]
     menu_other_category = {
 
         'title': 'Не нашли нужную пицу?',
