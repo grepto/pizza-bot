@@ -37,7 +37,8 @@ def cashe_menu():
     menu = get_products()
     for menu_item in menu:
         menu_item['main_image_url'] = get_product_image_url(menu_item['relationships']['main_image']['data']['id'])
-    return load_menu_to_db(menu)
+    load_menu_to_db(menu)
+    return 'Menu has been cached'
 
 
 def get_menu(category_id=None):
