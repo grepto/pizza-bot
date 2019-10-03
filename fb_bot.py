@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 from moltin import get_categories, add_cart_item, get_cart, get_product, remove_cart_item
 from database import get_user_state, set_user_state
-from pizza import get_menu
+from menu import get_menu
 
 load_dotenv()
 

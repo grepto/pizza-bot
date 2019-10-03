@@ -1,15 +1,11 @@
 import json
-import os
 import logging
 
-import requests
 from slugify import slugify
 import yandex_geocoder
 from geopy.distance import lonlat, distance
 
-from moltin import load_image, add_product, link_product_image, add_flow_entry, get_flow_entries, get_flow_entry, \
-    get_cart, add_cart_custom_item, get_products, get_product_image_url
-from database import get_menu_from_db, load_menu_to_db
+from moltin import add_flow_entry, get_flow_entries, get_flow_entry, get_cart, add_cart_custom_item
 
 MENU_FILE = 'menu.json'
 ADDRESSES_FILE = 'addresses.json'
@@ -18,32 +14,6 @@ CUSTOMER_LOCATION_FLOW_SLUG = 'customer_location'
 DELIVERY_ITEM_NAME = 'Доставка'
 
 logger = logging.getLogger('pizza')
-
-
-def update_menu(menu_file):
-    with open(menu_file, 'r') as file:
-        menu = json.load(file)
-
-    for pizza in menu:
-        image_url = pizza['product_image']['url']
-        image_name = f'{pizza["id"]}.jpg'
-        response = requests.get(image_url)
-
-        with open(image_name, 'wb') as image:
-            image.write(response.content)
-
-        product = {
-            'id': pizza['id'],
-            'name': pizza['name'],
-            'description': pizza['description'],
-            'price': pizza['price'],
-        }
-
-        moltin_product_id = add_product(product)
-        moltin_image_id = load_image(image_name)
-        link_product_image(moltin_product_id, moltin_image_id)
-
-        os.remove(image_name)
 
 
 def update_addresses(addresses_file):
@@ -125,25 +95,6 @@ def get_cart_items_text(cart):
         cart_items_text = '\n\n'.join(text_rows)
 
     return cart_items_text
-
-
-def cashe_menu():
-    menu = get_products()
-    for menu_item in menu:
-        menu_item['main_image_url'] = get_product_image_url(menu_item['relationships']['main_image']['data']['id'])
-    return load_menu_to_db(menu)
-
-
-def get_menu(category_id=None):
-    if not category_id:
-        menu = get_menu_from_db()
-    else:
-        menu = []
-        for menu_item in get_menu_from_db():
-            if [category for category in menu_item['relationships']['categories']['data'] if
-                category['id'] == category_id]:
-                menu.append(menu_item)
-    return menu
 
 
 def main():
