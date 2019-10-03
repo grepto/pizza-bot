@@ -118,7 +118,7 @@ def send_cart(user_id):
         'buttons': [
             {
                 'type': 'postback',
-                'title': 'Добавить в еще одну',
+                'title': 'Добавить еще одну',
                 'payload': f'add_to_cart~{product["product_id"]}'
             },
             {
@@ -209,9 +209,9 @@ def send_menu(user_id, category_id=COMMON_CATEGORY_ID):
         for menu_item in get_menu(category_id=category_id)]
     menu_other_category = {
 
-        'title': 'Не нашли нужную пицу?',
+        'title': 'Не нашли нужную пиццу?',
         'image_url': 'https://primepizza.ru/uploads/position/large_0c07c6fd5c4dcadddaf4a2f1a2c218760b20c396.jpg',
-        'subtitle': 'Остальные пицы можно посмотреть в других категориях',
+        'subtitle': 'Остальные пиццы можно посмотреть в других категориях',
         'buttons': [
             {
                 'type': 'postback',
