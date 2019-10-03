@@ -22,11 +22,19 @@ log_config = {
                 'handlers': ['console'],
                 'level': LOG_LEVEL,
             },
+            'fb_bot': {
+                'handlers': ['console'],
+                'level': LOG_LEVEL,
+            },
             'moltin': {
                 'handlers': ['console'],
                 'level': LOG_LEVEL,
             },
             'pizza': {
+                'handlers': ['console'],
+                'level': LOG_LEVEL,
+            },
+            'database': {
                 'handlers': ['console'],
                 'level': LOG_LEVEL,
             },
